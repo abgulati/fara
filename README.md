@@ -8,6 +8,7 @@
 [![Hugging Face Model](https://img.shields.io/badge/🤗-Model-yellow)](https://huggingface.co/microsoft/Fara-7b)
 [![Foundry](https://img.shields.io/badge/Azure-Foundry-0089D6)](https://aka.ms/foundry-fara-7b)
 [![Dataset](https://img.shields.io/badge/🤗-WebTailBench%20Dataset-orange)](https://huggingface.co/datasets/microsoft/WebTailBench)
+[![Dataset](https://img.shields.io/badge/🤗-CUAVerifierBench-orange)](https://huggingface.co/datasets/microsoft/CUAVerifierBench)
 [![Paper](https://img.shields.io/badge/Paper-2511.19663-red)](https://arxiv.org/abs/2511.19663)
 
 </div>
@@ -16,6 +17,15 @@
 
 ## Updates
 
+* **2026-04-19** — Released **[CUAVerifierBench](https://huggingface.co/datasets/microsoft/CUAVerifierBench)**,
+  a human-annotated benchmark for evaluating CUA verifiers (i.e. judges that
+  score agent trajectories). Two splits — `fara7b_om2w_browserbase` (106
+  Fara-7B Online-Mind2Web/Browserbase trajectories, ~2 reviewers each) and
+  `internal` (154 trajectories from a heldout aurora-v2 task suite) —
+  with per-judge UV-blind / UV-informed labels, Universal Verifier
+  outputs, and legacy verifier outputs side-by-side. See the new
+  [`cuaverifierbench/`](cuaverifierbench/) directory in this repo for
+  the build script.
 * **2026-04-18** — Removed the `autogen-core` / `autogen-ext` dependency
   from `webeval`; chat completion clients are now self-contained under
   `webeval/src/webeval/oai_clients/`. No more autogen submodule install
@@ -166,6 +176,35 @@ We are releasing **[WebTailBench](https://huggingface.co/datasets/microsoft/WebT
 **Coming Soon:**
 - Task Verification pipeline for LLM-as-a-judge evaluation
 - Official human annotations of WebTailBench (in partnership with BrowserBase)
+
+### CUAVerifierBench: Evaluating the Verifiers Themselves
+
+While WebTailBench measures *agents*, **[CUAVerifierBench](https://huggingface.co/datasets/microsoft/CUAVerifierBench)** measures the *judges that score those agents*. Each row pairs a Fara-7B agent trajectory (instruction, screenshots, web_surfer log, final answer) with one human reviewer's verdict, plus the verdicts produced by the **Universal Verifier (`MMRubricAgent`)** and several legacy verifiers — so researchers can compute verifier–human agreement (Cohen's κ, accuracy, F1) on a fixed corpus and iterate on new judge prompts / architectures against a frozen ground-truth set.
+
+The dataset is exposed as two HuggingFace configs joinable on `task_id`:
+
+| Config | Granularity | Contents |
+|---|---|---|
+| `trajectories` | one row per task | instruction, screenshots, web_surfer log, verifier outputs, task-level human aggregates |
+| `annotations` | one row per (task, judge) | per-reviewer outcome / process labels and free-text justifications |
+
+Two splits ship today:
+
+| Split | Source | Trajectories | Annotation rows |
+|---|---|---|---|
+| `fara7b_om2w_browserbase` | Fara-7B trajectories on Online-Mind2Web tasks executed via Browserbase | 106 | 215 (≈2 reviewers/task; UV-blind **and** UV-informed stages) |
+| `internal` | Heldout aurora-v2 task suite scored with the same WebSurfer + verifier stack | 154 | 154 (1 reviewer/task; UV-blind only) |
+
+Reviewer identities are anonymized as `Judge1` … `JudgeN` using a single shared map across both splits. The build script that produced the dataset (with full schema + provenance) lives at [`cuaverifierbench/build_dataset.py`](cuaverifierbench/build_dataset.py); see the [dataset README](https://huggingface.co/datasets/microsoft/CUAVerifierBench/blob/main/README.md) for the full column list.
+
+```python
+from datasets import load_dataset
+
+trajs = load_dataset("microsoft/CUAVerifierBench", "trajectories",
+                     split="fara7b_om2w_browserbase")
+anns  = load_dataset("microsoft/CUAVerifierBench", "annotations",
+                     split="fara7b_om2w_browserbase")
+```
 
 ### Evaluation Infrastructure
 
