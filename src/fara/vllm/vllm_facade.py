@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from enum import Enum
 import os
 import logging
@@ -13,9 +14,13 @@ class Status(Enum):
 
 
 class VLLM:
+    # Use the parent process's Python interpreter rather than a bare
+    # ``python`` PATH lookup — the parent already chose its env (typically
+    # ``fara_webeval``) and we want vLLM to come from that same env, not
+    # whatever ``which python`` happens to point at (a stale ``.venv`` etc).
     cmd_template = " ".join(
         [
-            "python -O -u -m vllm.entrypoints.openai.api_server",
+            f"{sys.executable} -O -u -m vllm.entrypoints.openai.api_server",
             "--host={host}",
             "--port={port}",
             "--model={model_dir}",

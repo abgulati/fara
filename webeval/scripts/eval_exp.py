@@ -21,8 +21,6 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_colwidth', 100)
 pd.set_option('display.width', None)
 
-# from aztool.azcp import AzFolder
-# from aztool.workspace import renew_mlflow_token
 from fara.vllm.az_vllm import AzVllm
 from webeval.core import reduce_eval_results, run_eval_multiple_examples, run_eval_multiple_examples_with_progress
 from webeval.eval_result import EvalResult, Stage
@@ -330,25 +328,19 @@ class EvalExp:
         return self.ws.start_run(self.experiment_name)      
 
 def get_fn_call_template_mapping(template_name):
-    """Get the actual template string from the template name using NousFnCallPrompt.
-    
-    Maps template names to their actual template strings from fncall_prompt.py
+    """Resolve a function-call template name to its actual prompt string.
+
+    Uses the in-repo ``fara.qwen_helpers.fncall_prompt.NousFnCallPrompt``
+    template registry. Returned as an MLflow tag so eval runs record
+    which prompt template was used end-to-end.
     """
-    # Import here to avoid circular imports
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '../../agento/src'))
-    
     try:
-        from agento.agents.orca_web_surfer.qwen.fncall_prompt import NousFnCallPrompt
-        
-        # Instantiate the prompt class with the given template name
+        from fara.qwen_helpers.fncall_prompt import NousFnCallPrompt
+
         prompt_instance = NousFnCallPrompt(template_name)
-        
-        # Get the actual template string from the instance
-        template_string = prompt_instance.template_map.get(template_name, f"Unknown template: {template_name}")
-        
-        return template_string
+        return prompt_instance.template_map.get(
+            template_name, f"Unknown template: {template_name}"
+        )
     except ImportError as e:
         return f"Error importing NousFnCallPrompt: {e}"
     except ValueError as e:

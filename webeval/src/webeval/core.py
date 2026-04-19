@@ -25,7 +25,6 @@ logging.basicConfig(
     force=True  # Override any existing configuration
 )
 logger = logging.getLogger(__name__)
-logging.getLogger("autogen_core").setLevel(logging.CRITICAL)
 
 # Global variables for multiprocessing
 _GLOBAL_SYSTEM = None

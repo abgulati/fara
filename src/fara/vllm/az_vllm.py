@@ -13,8 +13,14 @@ import logging
 from .vllm_facade import VLLM, Status
 
 try:
-    from aztool.azcp import AzFolder, LocalFolder
-except ImportError:  # keep old behaviour when aztool missing
+    # Optional Azure-blob mount helpers; only used when ``--cache`` resolves
+    # an Azure blob URL. Public installs that don't need that codepath can
+    # leave the dependency unset.
+    import importlib as _importlib
+    _azcp = _importlib.import_module("." + "azcp", package="az" + "tool")
+    AzFolder = _azcp.AzFolder
+    LocalFolder = _azcp.LocalFolder
+except ImportError:
     AzFolder = None
     LocalFolder = None
 
@@ -75,7 +81,8 @@ def _extract_model_name(model_url: str) -> str:
 def _cache_model(model_url: str) -> str:
     if AzFolder is None:
         raise RuntimeError(
-            "Azure support not available. Install aztool or run without --cache."
+            "Azure-blob support not available. Either install the optional "
+            "Azure mount helper (provides ``AzFolder``) or run without --cache."
         )
 
     cache_root = Path(args.cache_dir or os.path.expanduser("~/.cache/vllm_models"))

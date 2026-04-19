@@ -3,9 +3,18 @@ from ...benchmark import Benchmark
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 import os
-from autogen_core.components.models import UserMessage, SystemMessage, LLMMessage, ChatCompletionClient
-from autogen_core.components import Image as AGImage
-from autogen_core.components.models import ChatCompletionClient
+import base64
+import io
+
+from PIL import Image as PILImage
+
+from ...oai_clients import (
+    ChatCompletionClient,
+    ImageObj as AGImage,
+    LLMMessage,
+    SystemMessage,
+    UserMessage,
+)
 from webeval.benchmarks.om2w.impl.src.methods import agenttrek_eval, automomous_eval, webjudge_general_eval, webjudge_online_mind2web, webvoyager_eval
 from webeval.benchmarks.om2w.impl.src.utils import extract_predication
 from webeval.trajectory import Trajectory, FinalAnswer
@@ -13,29 +22,35 @@ from ...evaluators import compute_aggregate_metrics_gpt_evaluator, safe_mean, co
 import asyncio
 import json
 
-def _content_2_agento(content):
-    result = []
+def _image_from_uri(uri: str) -> AGImage:
+    """Decode an image URI (only data URLs are supported) into an :class:`AGImage`."""
+    if not uri.startswith("data:"):
+        raise NotImplementedError(f"Only data URIs are supported in om2w eval, got: {uri[:64]}")
+    _, _, b64 = uri.partition(",")
+    pil = PILImage.open(io.BytesIO(base64.b64decode(b64)))
+    return AGImage.from_pil(pil)
+
+
+def _content_to_native(content):
     if isinstance(content, str):
         return content
-    elif isinstance(content, dict):
-        if content['type'] == 'text':
-            return content['text']
-        elif content['type'] == 'image_url':
-            return AGImage.from_uri(content['image_url']['url'])
-        else:
-            raise ValueError(f"Unsupported content type: {content['type']}")
-    elif isinstance(content, list):
-        return [_content_2_agento(c) for c in content]
-    else:
-        raise ValueError(f"Unsupported content type: {type(content)}")  
+    if isinstance(content, dict):
+        if content["type"] == "text":
+            return content["text"]
+        if content["type"] == "image_url":
+            return _image_from_uri(content["image_url"]["url"])
+        raise ValueError(f"Unsupported content type: {content['type']}")
+    if isinstance(content, list):
+        return [_content_to_native(c) for c in content]
+    raise ValueError(f"Unsupported content type: {type(content)}")
 
-def _messages_2_agento(messages):
+def _messages_to_native(messages):
     result = []
     for m in messages:
         if m['role'] == 'user':
-            result.append(UserMessage(content=_content_2_agento(m['content']), source='user'))
+            result.append(UserMessage(content=_content_to_native(m['content']), source='user'))
         elif m['role'] == 'system':
-            result.append(SystemMessage(content=_content_2_agento(m['content'])))
+            result.append(SystemMessage(content=_content_to_native(m['content'])))
     return result
 
 class _ModelWrapper:
@@ -43,11 +58,11 @@ class _ModelWrapper:
         self.model_client = model_client
 
     def generate(self, messages, **kwargs) -> LLMMessage:
-        response = asyncio.run(self.model_client.create(_messages_2_agento(messages), **kwargs))
+        response = asyncio.run(self.model_client.create(_messages_to_native(messages), **kwargs))
         return [response.content]
     
     async def agenerate(self, messages, **kwargs) -> LLMMessage:
-        response = await self.model_client.create(_messages_2_agento(messages), **kwargs)
+        response = await self.model_client.create(_messages_to_native(messages), **kwargs)
         return [response.content]
 
 class OnlineM2WBenchmark(Benchmark):

@@ -14,6 +14,28 @@
 
 ---
 
+## Updates
+
+* **2026-04-18** — Removed the `autogen-core` / `autogen-ext` dependency
+  from `webeval`; chat completion clients are now self-contained under
+  `webeval/src/webeval/oai_clients/`. No more autogen submodule install
+  step; just `pip install -e .[vllm]` then `cd webeval; pip install -e .`.
+* **2026-04-18** — Incorporated WebTailBench (initial / now-stale
+  version) directly into the repo as a first-class benchmark. The
+  loader auto-downloads `WebTailBench-v1-rubrics.tsv` from
+  [`microsoft/WebTailBench`](https://huggingface.co/datasets/microsoft/WebTailBench)
+  and threads each task's published `precomputed_rubric` through to
+  the verifier. Reproducibility CLI lives in `webeval/scripts/webtailbench.py`.
+* **2026-04-18** — Released the **Universal Verifier** (`MMRubricAgent`)
+  as the official verifier for WebTailBench. Multimodal,
+  rubric-grounded, two-model ensemble (`gpt-5.2` + `o4-mini`) with
+  per-criterion scoring, outcome verification, and first-point-of-failure
+  analysis. A stand-alone parallel runner is at
+  `webeval/scripts/verify_trajectories.py` for re-scoring any directory
+  of webeval trajectories without touching the solver.
+
+---
+
 ## Overview
 
 **Fara-7B** is Microsoft's first **agentic small language model (SLM)** designed specifically for computer use. With only 7 billion parameters, Fara-7B is an ultra-compact Computer Use Agent (CUA) that achieves state-of-the-art performance within its size class and is competitive with larger, more resource-intensive agentic systems.
@@ -298,22 +320,28 @@ Each trajectory is capped at a maximum of 100 actions across all online benchmar
 conda create --name fara_webeval python=3.12
 conda activate fara_webeval
 
-# Install fara package
-pip install -e .
-
-# Install autogen submodule
-git submodule update --init --recursive
-cd autogen/python/packages
-pip install -e autogen-core
-pip install -e autogen-ext
+# Install fara package (with vllm extras for GPU hosting)
+pip install -e .[vllm]
 
 # Install webeval
-cd ../../../webeval
+cd webeval
 pip install -e .
 
 # Install playwright
 playwright install
 ```
+
+The webeval package no longer depends on `autogen-core` / `autogen-ext` —
+all chat completion clients are vendored under `webeval/src/webeval/oai_clients/`
+(see `GracefulRetryClient`, `OpenAIClientWrapper`, `AzureOpenAIClientWrapper`,
+etc.). You no longer need to clone or install the autogen submodule.
+
+> **Always activate the `fara_webeval` env before running any of the eval
+> scripts below.** It pins `vllm==0.10.0` + `torch==2.7.1`; running with
+> a newer `vllm` (≥ 0.19) under `torch` ≥ 2.10 trips a known
+> `torch._dynamo.symbolic_convert` crash during CUDA-graph capture, which
+> can be worked around with `--enforce_eager` but at a meaningful
+> throughput cost. Stick to the pinned env.
 
 ## Running Evaluations
 
@@ -331,6 +359,51 @@ Make sure you set a valid OpenAI GPT-4o endpoint in `endpoint_configs_gpt4o/dev`
 python webvoyager.py --model_url /path/where/you/want/to/download/model/ --model_port 5000 --eval_oai_config ../endpoint_configs_gpt4o/dev/ --out_url /path/to/save/eval/files --device_id 0,1 --processes 1 --run_id 1 --max_rounds 100
 python om2w.py --model_url /path/where/you/want/to/download/model/ --model_port 5000 --eval_oai_config ../endpoint_configs_o4/dev/ --eval_model o4-mini --out_url /path/to/save/eval/files --device_id 0,1 --processes 1 --run_id 1 --max_rounds 100
 
+# WebTailBench almost always needs --browserbase: a meaningful share of
+# the benchmark's task websites (airlines, retailers, ticketing, …)
+# block bot traffic from a vanilla playwright browser. Without
+# --browserbase you'll see a high rate of trajectories that abort on
+# Page.goto / navigation / captcha errors. Set BROWSERBASE_API_KEY and
+# BROWSERBASE_PROJECT_ID in the environment first.
+export BROWSERBASE_API_KEY=<your_browserbase_api_key>
+export BROWSERBASE_PROJECT_ID=<your_browserbase_project_id>
+
+# --success controls which Universal Verifier signal counts as the
+# top-line score: ``outcome`` (default; binary outcome_success — what the
+# Fara-7B numbers in the README above are reported against), ``process``
+# (rubric_is_success := rubric_score >= --rubric_score_threshold; a more
+# lenient gate, expect slightly higher numbers), or ``both``.
+python webtailbench.py \
+    --model_url /data/data/Fara/model_checkpoints \
+    --model_port 5000 \
+    --device_id 0,1 \
+    --eval_oai_config ../../endpoint_configs/judge_active/prod \
+    --judge_eval_model gpt-5.2 \
+    --judge_o4_eval_model o4-mini \
+    --rubric_score_threshold 0.8 \
+    --success outcome \
+    --out_url /data/data/Fara/eval \
+    --processes 4 \
+    --run_id 1 \
+    --max_rounds 100 \
+    --browserbase
+
+python webtailbench.py \
+    --model_url /data/data/Fara/model_checkpoints \
+    --eval_oai_config ../../endpoint_configs/judge_active/prod \
+    --judge_eval_model gpt-5.2 --judge_o4_eval_model o4-mini \
+    --out_url /data/data/Fara/eval \
+    --split flights --subsample 0.1 \
+    --device_id 0,1 --processes 1 --run_id smoke --max_rounds 30 \
+    --browserbase
+
+python verify_trajectories.py \
+    --input /data/data/Fara/eval/runs/.../<benchmark>/<run_id>/traj \
+    --task-data ../data/om2w/Online_Mind2Web_06042025.json \
+    --task-data-format om2w \
+    --eval-config ../../endpoint_configs/judge_active/prod \
+    --judge-model gpt-5.2 --o4mini-model o4-mini \
+    --processes 8
 ```
 
 **Option 2: Azure Foundry Deployment**
@@ -340,6 +413,7 @@ Deploy [Fara-7B on Foundry endpoint(s)](https://ai.azure.com/explore/models/Fara
 ```bash
 python webvoyager.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../endpoint_configs_gpt4o/dev/ --out_url /path/to/save/eval/files --processes 1 --run_id 1_endpoint --max_rounds 100
 python om2w.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../endpoint_configs_o4/dev/ --eval_model o4-mini --out_url /path/to/save/eval/files --processes 1 --run_id 1_endpoint --max_rounds 100
+python webtailbench.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../../endpoint_configs/judge_active/prod --judge_eval_model gpt-5.2 --judge_o4_eval_model o4-mini --out_url /data/data/Fara/eval --processes 1 --run_id 1_endpoint --max_rounds 100
 ```
 
 ### Notes

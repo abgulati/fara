@@ -4,8 +4,7 @@ from dataclasses import dataclass, asdict, field
 from typing import List, Dict
 import os
 from collections import defaultdict
-from autogen_core.components.models import RequestUsage
-from autogen_ext.models._openai._openai_client import _add_usage
+from .oai_clients import RequestUsage
 
 
 @dataclass
@@ -40,10 +39,9 @@ class FinalAnswer:
             self.token_usage[key] = RequestUsage(**token_usage)
 
     def add_token_usage(self, key: str, token_usage: RequestUsage | Dict[str, int]):
-        if isinstance(token_usage, RequestUsage):
-            self.token_usage[key] = _add_usage(self.token_usage[key], token_usage)
-        else:
-            self.token_usage[key] = _add_usage(self.token_usage[key], RequestUsage(**token_usage))
+        if not isinstance(token_usage, RequestUsage):
+            token_usage = RequestUsage(**token_usage)
+        self.token_usage[key] = self.token_usage[key] + token_usage
 
     def to_dict(self):
         result = asdict(self)

@@ -1,54 +1,19 @@
+import asyncio
+import json
+import logging
 import math
 import os
-import json
-import asyncio
-import logging
 import random
-from typing import Dict, Any, List, Tuple, Union, Optional, Optional
-from webeval.basesystem import BaseSystem
-from webeval.trajectory import Trajectory, FinalAnswer
-from webeval.utils import LogHandler
-from webeval.utils import create_completion_client_from_env, dict_2_str
-from .base_orchestrator import BaseOrchestrator
-from ..oai_clients.graceful_client import GracefulRetryClient, AnthropicGracefulRetryClient
-from autogen_core.base import AgentId, AgentProxy
-from autogen_core.components import DefaultTopicId, default_subscription
-from autogen_core.components.models import UserMessage, LLMMessage, ChatCompletionClient
-from autogen_core.base import CancellationToken
 import re
 from logging import Logger
-from urllib.parse import urlparse
-import asyncio
-import argparse
+from typing import Any, Dict, List, Optional, Union
+
 from fara import FaraAgent
 from fara.browser.browser_bb import BrowserBB
-import logging
 
-
-@default_subscription
-class WebSurferSystemOrchestrator(BaseOrchestrator):
-    """WebSurferSystemOrchestrator"""
-
-    def __init__(
-        self,
-        web_surfer_agent: AgentProxy,
-        answer_agent: Union[AgentProxy, None] = None,
-        description: str = "WebSurferSystemOrchestrator",
-        max_rounds: int = 20,
-    ) -> None:
-        self.web_surfer_agent = web_surfer_agent
-        self.answer_agent = answer_agent
-        if answer_agent is not None:
-            agents = [web_surfer_agent, answer_agent]
-        else:
-            agents = [web_surfer_agent]
-        super().__init__(agents=agents, description=description, max_rounds=max_rounds)
-
-    async def _select_next_agent(self, message: LLMMessage) -> AgentProxy:
-        if self.answer_agent is not None and self._num_rounds == self._max_rounds - 1:
-            return self.answer_agent
-        else:
-            return self.web_surfer_agent
+from webeval.basesystem import BaseSystem
+from webeval.trajectory import FinalAnswer, Trajectory
+from webeval.utils import LogHandler, dict_2_str
 
 
 class WebSurferSystem(BaseSystem):
@@ -225,11 +190,22 @@ class WebSurferSystem(BaseSystem):
         log_file = os.path.join(output_dir, "web_surfer.log")    # TODO: use a different mechanism for recording taken actions and use logger for logs
         logger = logger or logging.getLogger("WebSurferLogger")
         handler = LogHandler(filename=log_file)
+        # FaraAgent emits Thought/Action/Observation traces via
+        # ``self.logger.debug(...)`` (fara_agent.py L382, L394, L446). The
+        # Python default level is WARNING, which silently drops them — and
+        # downstream evaluators (incl. WebTailBench's rubric verifier) treat
+        # an empty web_surfer.log as "no actions in trajectory" → score 0.
+        # Force DEBUG on both the logger and the handler so the JSONL log
+        # actually captures every step.
+        handler.setLevel(logging.DEBUG)
+        prev_level = logger.level
+        logger.setLevel(logging.DEBUG)
         try:
             logger.addHandler(handler)
             return asyncio.run(_runner())
         finally:
             logger.removeHandler(handler)
+            logger.setLevel(prev_level)
             handler.close()
         
             
