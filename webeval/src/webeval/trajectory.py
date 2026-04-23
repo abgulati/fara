@@ -169,7 +169,11 @@ class Trajectory:
             self.thoughts = []
         else:
             self.actions = [e['arguments'] for e in self.events if e.get('action', None) is not None]
-            self.thoughts = [a['thoughts'] for a in self.actions]
+            # Fara-native trajectories emit a top-level ``thoughts`` field;
+            # gpt-solver trajectories don't (they carry ``reasoning`` +
+            # ``state_description`` instead). Tolerate both so verifier
+            # scripts can load either style without crashing.
+            self.thoughts = [a.get('thoughts', '') for a in self.actions]
             self.actions = [json.dumps({k: v for k, v in a.items() if k != 'thoughts'}) for a in self.actions]
     @property
     def is_aborted(self):

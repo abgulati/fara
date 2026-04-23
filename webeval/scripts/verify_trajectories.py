@@ -13,7 +13,7 @@ paying for a vLLM-backed solver run. Parallelised via
 Usage (OM2W trajectories — task instruction comes from the OM2W JSON):
 
     python verify_trajectories.py \\
-        --input /data/data/Fara/eval/runs/.../OnlineM2W_.../1/traj \\
+        --input /path/to/Fara/eval/runs/.../OnlineM2W_.../1/traj \\
         --task-data ../data/om2w/Online_Mind2Web_06042025.json \\
         --task-data-format om2w \\
         --eval-config ../../endpoint_configs/judge_active/prod \\
@@ -24,7 +24,7 @@ Usage (WebTailBench trajectories — instructions + precomputed rubrics
 from the HF rubrics TSV):
 
     python verify_trajectories.py \\
-        --input /data/data/Fara/eval/runs/.../WebTailBench_hf/full_v1/traj \\
+        --input /path/to/Fara/eval/runs/.../WebTailBench_hf/full_v1/traj \\
         --task-data ../data/webtailbench/WebTailBench-v1-rubrics.tsv \\
         --task-data-format webtailbench \\
         --eval-config ../../endpoint_configs/judge_active/prod \\

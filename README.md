@@ -23,9 +23,8 @@
   Fara-7B Online-Mind2Web/Browserbase trajectories, ~2 reviewers each) and
   `internal` (154 trajectories from a heldout aurora-v2 task suite) —
   with per-judge UV-blind / UV-informed labels, Universal Verifier
-  outputs, and legacy verifier outputs side-by-side. See the new
-  [`cuaverifierbench/`](cuaverifierbench/) directory in this repo for
-  the build script.
+  outputs, and legacy verifier outputs side-by-side. The build script
+  that produced the dataset lives alongside the data on HuggingFace.
 * **2026-04-18** — Removed the `autogen-core` / `autogen-ext` dependency
   from `webeval`; chat completion clients are now self-contained under
   `webeval/src/webeval/oai_clients/`. No more autogen submodule install
@@ -195,7 +194,7 @@ Two splits ship today:
 | `fara7b_om2w_browserbase` | Fara-7B trajectories on Online-Mind2Web tasks executed via Browserbase | 106 | 215 (≈2 reviewers/task; UV-blind **and** UV-informed stages) |
 | `internal` | Heldout aurora-v2 task suite scored with the same WebSurfer + verifier stack | 154 | 154 (1 reviewer/task; UV-blind only) |
 
-Reviewer identities are anonymized as `Judge1` … `JudgeN` using a single shared map across both splits. The build script that produced the dataset (with full schema + provenance) lives at [`cuaverifierbench/build_dataset.py`](cuaverifierbench/build_dataset.py); see the [dataset README](https://huggingface.co/datasets/microsoft/CUAVerifierBench/blob/main/README.md) for the full column list.
+Reviewer identities are anonymized as `Judge1` … `JudgeN` using a single shared map across both splits. The build script that produced the dataset (with full schema + provenance) ships alongside the data on HuggingFace at [`microsoft/CUAVerifierBench`](https://huggingface.co/datasets/microsoft/CUAVerifierBench); see the [dataset README](https://huggingface.co/datasets/microsoft/CUAVerifierBench/blob/main/README.md) for the full column list.
 
 ```python
 from datasets import load_dataset
@@ -413,7 +412,7 @@ export BROWSERBASE_PROJECT_ID=<your_browserbase_project_id>
 # (rubric_is_success := rubric_score >= --rubric_score_threshold; a more
 # lenient gate, expect slightly higher numbers), or ``both``.
 python webtailbench.py \
-    --model_url /data/data/Fara/model_checkpoints \
+    --model_url /path/to/Fara/model_checkpoints \
     --model_port 5000 \
     --device_id 0,1 \
     --eval_oai_config ../../endpoint_configs/judge_active/prod \
@@ -421,24 +420,15 @@ python webtailbench.py \
     --judge_o4_eval_model o4-mini \
     --rubric_score_threshold 0.8 \
     --success outcome \
-    --out_url /data/data/Fara/eval \
+    --out_url /path/to/Fara/eval \
     --processes 4 \
     --run_id 1 \
     --max_rounds 100 \
     --browserbase
 
-python webtailbench.py \
-    --model_url /data/data/Fara/model_checkpoints \
-    --eval_oai_config ../../endpoint_configs/judge_active/prod \
-    --judge_eval_model gpt-5.2 --judge_o4_eval_model o4-mini \
-    --out_url /data/data/Fara/eval \
-    --split flights --subsample 0.1 \
-    --device_id 0,1 --processes 1 --run_id smoke --max_rounds 30 \
-    --browserbase
-
 python verify_trajectories.py \
-    --input /data/data/Fara/eval/runs/.../<benchmark>/<run_id>/traj \
-    --task-data ../data/om2w/Online_Mind2Web_06042025.json \
+    --input /path/to/Fara/eval/runs/.../<benchmark>/<run_id>/traj \
+    --task-data ../path/to/om2w/Online_Mind2Web_06042025.json \
     --task-data-format om2w \
     --eval-config ../../endpoint_configs/judge_active/prod \
     --judge-model gpt-5.2 --o4mini-model o4-mini \
@@ -452,7 +442,7 @@ Deploy [Fara-7B on Foundry endpoint(s)](https://ai.azure.com/explore/models/Fara
 ```bash
 python webvoyager.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../endpoint_configs_gpt4o/dev/ --out_url /path/to/save/eval/files --processes 1 --run_id 1_endpoint --max_rounds 100
 python om2w.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../endpoint_configs_o4/dev/ --eval_model o4-mini --out_url /path/to/save/eval/files --processes 1 --run_id 1_endpoint --max_rounds 100
-python webtailbench.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../../endpoint_configs/judge_active/prod --judge_eval_model gpt-5.2 --judge_o4_eval_model o4-mini --out_url /data/data/Fara/eval --processes 1 --run_id 1_endpoint --max_rounds 100
+python webtailbench.py --model_endpoint ../../endpoint_configs/ --eval_oai_config ../../endpoint_configs/judge_active/prod --judge_eval_model gpt-5.2 --judge_o4_eval_model o4-mini --out_url /path/to/Fara/eval --processes 1 --run_id 1_endpoint --max_rounds 100
 ```
 
 ### Notes
