@@ -1,51 +1,25 @@
+"""Structured log events emitted by the websurfer system.
+
+The :class:`webeval.utils.LogHandler` checks ``isinstance(record.msg, …)``
+against these dataclasses to format ``web_surfer.log`` entries. Three are
+in use:
+
+* :class:`OrchestrationEvent` — orchestrator-side bookkeeping.
+* :class:`AgentEvent` — generic agent lifecycle messages.
+* :class:`WebSurferEvent` — per-action trace from the FaraAgent loop
+  (also recognised by ``post_eval_analysis.py`` when counting actions).
+"""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Dict, List, Union
-
-from autogen_core.components import FunctionCall, Image
-from autogen_core.components.models import FunctionExecutionResult, LLMMessage
-from pydantic import BaseModel
-
-# Convenience type
-UserContent = Union[str, List[Union[str, Image]]]
-AssistantContent = Union[str, List[FunctionCall]]
-FunctionExecutionContent = List[FunctionExecutionResult]
-SystemContent = str
-
-# the below are message types used in MagenticOne
+from typing import Any, Dict
 
 
-# used by all agents to send messages
-class BroadcastMessage(BaseModel):
-    content: LLMMessage
-    request_halt: bool = False
-
-
-# used by orchestrator to obtain a response from an agent
-@dataclass
-class RequestReplyMessage:
-    pass
-
-
-# used by orchestrator to reset an agent
-@dataclass
-class ResetMessage:
-    pass
-
-
-# used by orchestrator to deactivate an agent
-@dataclass
-class DeactivateMessage:
-    pass
-
-
-# orchestrator events
 @dataclass
 class OrchestrationEvent:
     source: str
     message: str
-
-
-MagenticOneMessages = RequestReplyMessage | BroadcastMessage | ResetMessage | DeactivateMessage
 
 
 @dataclass
@@ -54,7 +28,6 @@ class AgentEvent:
     message: str
 
 
-# used by the web surfer agent
 @dataclass
 class WebSurferEvent:
     source: str
@@ -62,10 +35,3 @@ class WebSurferEvent:
     url: str
     action: str | None = None
     arguments: Dict[str, Any] | None = None
-
-@dataclass
-class TaskProposalEvent:
-    source: str
-    message: str
-    task_url: str
-    

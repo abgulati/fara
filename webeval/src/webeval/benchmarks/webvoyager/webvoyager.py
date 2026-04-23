@@ -4,8 +4,9 @@ import base64
 import asyncio
 import re
 from typing import List, Dict, Any
-from autogen_core.components.models import UserMessage, LLMMessage, ChatCompletionClient
-from autogen_core.components import Image as AGImage
+from PIL import Image as PILImage
+
+from ...oai_clients import ChatCompletionClient, ImageObj as AGImage, LLMMessage, UserMessage
 from ...benchmark import Benchmark
 from ...eval_result import EvalResult
 from ...utils import download_file, load_jsonl, load_json
@@ -200,8 +201,7 @@ class WebVoyagerBenchmark(Benchmark):
 
         images = []
         for path in screenshot_paths:
-            # from_file
-            image = AGImage.from_file(path)
+            image = AGImage.from_pil(PILImage.open(path))
             images.append(image)
 
         # Need this to avoid tokens over limit

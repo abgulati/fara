@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import os
 import logging
-# from aztool.workspace import Workspace, AIF_WORKSPACE
 import mlflow
 from eval_exp import EvalExp, ModelReference, get_foundry_endpoint_configs
 from webeval.oai_clients.graceful_client import GracefulRetryClient

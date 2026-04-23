@@ -29,6 +29,27 @@ from .fara_types import (
 from .utils import get_trimmed_url
 
 
+# Canonical fara-1.0 action space mapping {action_name: set(arg_names)}.
+# Source of truth: ``FaraComputerUseTool.parameters`` in ``_prompts.py``.
+# Kept here so downstream callers (the rubric verifier, evaluation
+# scripts, training code, etc.) have a single place to import from
+# instead of duplicating the schema. Update both this dict AND the tool
+# parameter schema together if the action space changes.
+FARA_ACTION_DEFINITIONS: Dict[str, set] = {
+    "key": {"keys"},
+    "type": {"text", "coordinate", "press_enter", "delete_existing_text"},
+    "mouse_move": {"coordinate"},
+    "left_click": {"coordinate"},
+    "scroll": {"coordinate", "pixels"},
+    "visit_url": {"url"},
+    "web_search": {"query"},
+    "history_back": set(),
+    "pause_and_memorize_fact": {"fact"},
+    "wait": {"time"},
+    "terminate": {"status"},
+}
+
+
 class FaraAgent:
     DEFAULT_START_PAGE = "https://www.bing.com/"
 

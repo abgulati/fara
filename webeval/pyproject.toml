@@ -18,8 +18,6 @@ classifiers = [
 
 
 dependencies = [
-    "autogen-core@{root:parent:uri}/autogen/python/packages/autogen-core",
-    "autogen-ext@{root:parent:uri}/autogen/python/packages/autogen-ext",
     "openai",
     "playwright",
     "docker",
@@ -37,10 +35,11 @@ dependencies = [
     "torchaudio==2.7.1",
     "transformers==4.53.3",
     "backoff",
-    "anthropic",
     "joblib",
     "mlflow",
-    "rpds-py"
+    "rpds-py",
+    "pillow",
+    "tiktoken"
 ]
 
 

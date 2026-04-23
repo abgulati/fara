@@ -47,7 +47,7 @@ def _get_base_eval_arg_parser():
     parser.add_argument("--user", type=str, default=None, help="User name, default: local user name")
     parser.add_argument("--run_id", type=str, default=None, help="run id")
     parser.add_argument("--subsample", type=float, default=1.0, help="Subsample ratio for evaluation")
-    parser.add_argument('--eval_oai_config', type=str, default = "../../agento/endpoint_configs/dev", help='Path to the OpenAI config file(s)')
+    parser.add_argument('--eval_oai_config', type=str, default="../../endpoint_configs/judge_active/prod", help='Path to the OpenAI config file(s)')
     parser.add_argument('--processes', type=int, default=1, help='Number of processes to use for evaluation')
     parser.add_argument('--max_rounds', type=int, default=100, help='Maximum trajectory length')
     parser.add_argument('--web_surfer_model_type', type=str, choices=["fara"], default='fara', help='WebSurfer model type (default: fara)')

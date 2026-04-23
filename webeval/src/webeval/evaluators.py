@@ -6,8 +6,9 @@ import math
 
 from collections import defaultdict
 from typing import List, Optional
-from autogen_core.components.models import UserMessage, LLMMessage, ChatCompletionClient
-from autogen_core.components import Image as AGImage
+from PIL import Image as PILImage
+
+from .oai_clients import ChatCompletionClient, ImageObj as AGImage, LLMMessage, UserMessage
 from .eval_result import EvalResult
 import collections
 import re
@@ -324,7 +325,7 @@ async def llm_evaluate_candidate_answer_async(
         for path in candidate_screenshots:
             # from_file
             try:
-                image = AGImage.from_file(path)
+                image = AGImage.from_pil(PILImage.open(path))
                 images.append(image)
             except Exception as e:
                 print(f"Error: {e}")

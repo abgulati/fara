@@ -3,6 +3,17 @@ fara_downloads/
 .vscode
 logs/
 
+endpoint_configs/*/prod/
+endpoint_configs/gpt5.2_prod/
+
+# Local WebTailBench / HF dataset cache
+webeval/data/webtailbench/
+
+# MLflow local store + scratch logs
+webeval/scripts/mlflow.db
+webeval/scripts/mlruns/
+webeval/scripts/stdout.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
