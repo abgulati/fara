@@ -531,33 +531,6 @@ class MMRubricOutcomeResult(VerificationResult):
     primary_intent: str = ""
 
 
-class TrajectoryDiagnosticsResult(VerificationResult):
-    """Structured result from trajectory diagnostics verification."""
-
-    result_type: Literal["trajectory_diagnostics"] = "trajectory_diagnostics"
-    # Efficiency
-    loops: List[Dict[str, Any]] = Field(default_factory=list)
-    unnecessary_actions: List[Dict[str, Any]] = Field(default_factory=list)
-    efficiency_rating: Optional[int] = None
-    efficiency_reasoning: str = ""
-    # Success
-    solver_self_judgement_of_success: Optional[bool] = None
-    solver_self_judgement_reasoning: str = ""
-    proxy_verifier_judgement_of_success: Optional[bool] = None
-    proxy_verifier_judgement_reasoning: str = ""
-    # Optimal plan
-    optimal_plan: List[str] = Field(default_factory=list)
-    optimal_plan_reasoning: str = ""
-    # Critical point (via CriticalPointComplianceAgent)
-    task_has_critical_point: Optional[bool] = None
-    critical_point_type: Optional[str] = None
-    critical_point_classification_reasoning: str = ""
-    critical_point_expected_behavior: List[str] = Field(default_factory=list)
-    agent_navigated_successfully: Optional[bool] = None
-    critical_point_reasoning: str = ""
-    # Critical point (via direct LLM call — backup)
-    critical_point_llm: Dict[str, Any] = Field(default_factory=dict)
-
 
 class TaskAgentResult(VerificationResult):
     """Result from the unified task verification classification (Step 10).
