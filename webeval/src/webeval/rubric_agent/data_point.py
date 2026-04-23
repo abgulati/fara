@@ -557,7 +557,6 @@ VerificationResultEvent = Annotated[
         MMRubricResult,
         MMRubricOutcomeResult,
         WebJudgeResult,
-        TrajectoryDiagnosticsResult,
         TaskAgentResult,
         VerificationResult,
     ],
