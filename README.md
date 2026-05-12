@@ -20,7 +20,7 @@
 * **2026-05-12** — Refreshed **WebTailBench (V2)** tasks and rubrics.
   Many V1 tasks had calendar-bound dates that expired (Nov 2025); V2
   rolls those forward and revises the precomputed rubrics for the
-  full 609-task suite. Available now as the `test-v2` split on
+  full 609-task suite. Available now as the `test_v2` split on
   [`microsoft/WebTailBench`](https://huggingface.co/datasets/microsoft/WebTailBench).
   A side-by-side V1↔V2 diff (task strings and rubric JSON) is
   hosted [here](https://microsoft.github.io/fara/docs/webtailbench_v1_v2_diff.html).
