@@ -17,6 +17,13 @@
 
 ## Updates
 
+* **2026-05-12** — Refreshed **WebTailBench (V2)** tasks and rubrics.
+  Many V1 tasks had calendar-bound dates that expired (Nov 2025); V2
+  rolls those forward and revises the precomputed rubrics for the
+  full 609-task suite. Available now as the `test-v2` split on
+  [`microsoft/WebTailBench`](https://huggingface.co/datasets/microsoft/WebTailBench).
+  A side-by-side V1↔V2 diff (task strings and rubric JSON) is
+  hosted [here](https://microsoft.github.io/fara/docs/webtailbench_v1_v2_diff.html).
 * **2026-04-19** — Released **[CUAVerifierBench](https://huggingface.co/datasets/microsoft/CUAVerifierBench)**,
   a human-annotated benchmark for evaluating CUA verifiers (i.e. judges that
   score agent trajectories). Two splits — `fara7b_om2w_browserbase` (106
